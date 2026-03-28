@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Micro-Invest | استثمر فكتك</title>
+
+  <!--
+    ================================================================
+    MICRO-INVEST  v3.1 — Graduation Project, BIS Final Year
+    Faculty of Commerce | Business Information Systems
+
+    v3.1 UI Upgrade:
+      - Split-screen auth with animated marketing hero
+      - Glassmorphism cards with backdrop-filter
+      - ROI / Profit simulation card with count-up animation
+      - Smooth fade+slide view transitions
+      - Full AR/EN RTL/LTR compat. preserved
+    ================================================================
+  -->
+
+  <!-- Google Fonts: Sora (EN display) + Cairo (AR) + Inter (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Inter:wght@400;500;600;700&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js v4 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ============================================================
+       TOAST NOTIFICATION
+  ============================================================ -->
+  <div id="toast" class="toast" role="alert" aria-live="polite"></div>
+
+  <!-- ============================================================
+       TOP NAVIGATION BAR
+  ============================================================ -->
+  <nav class="navbar" id="navbar" style="display:none;">
+    <a href="#" class="nav-logo" onclick="return false;">
+      <span class="logo-mark">◈</span>
+      <span data-en="Micro-Invest" data-ar="استثمر فكتك">Micro-Invest</span>
+    </a>
+
+    <div class="nav-links" id="navLinks">
+      <a href="#" class="nav-item-user" data-section="overview"
+         data-en="Dashboard" data-ar="لوحة التحكم">Dashboard</a>
+      <a href="#" class="nav-item-user" data-section="simulate"
+         data-en="Simulate" data-ar="محاكاة">Simulate</a>
+      <a href="#" class="nav-item-user" data-section="history"
+         data-en="History" data-ar="السجل">History</a>
+      <a href="#" class="nav-item-admin" data-section="admin-overview"
+         data-en="Overview" data-ar="نظرة عامة">Overview</a>
+      <a href="#" class="nav-item-admin" data-section="admin-users"
+         data-en="All Users" data-ar="كل المستخدمين">All Users</a>
+    </div>
+
+    <div class="nav-right">
+      <button class="lang-btn" id="langToggle" title="Switch Language">
+        <span>🌐</span>
+        <span id="langLabel">عربي</span>
+      </button>
+      <button class="theme-btn" id="themeToggle" title="Toggle Dark Mode">
+        <span id="themeIcon">🌙</span>
+      </button>
+      <div class="nav-user" id="navUser" style="display:none;">
+        <div class="nav-avatar" id="navAvatar">A</div>
+        <span id="navUserName">User</span>
+      </div>
+      <button class="btn-nav-logout" id="logoutBtn"
+              data-en="Logout" data-ar="خروج">Logout</button>
+    </div>
+  </nav>
+
+
+  <!-- ============================================================
+       VIEW: AUTHENTICATION — Split-Screen Layout
+  ============================================================ -->
+  <div id="view-auth" class="view auth-view">
+    <div class="auth-split">
+
+      <!-- ── HERO SIDE (left in LTR, right in RTL) ──────────── -->
+      <div class="auth-hero">
+        <!-- Animated background orbs -->
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+        <!-- Subtle grid overlay -->
+        <div class="hero-grid"></div>
+
+        <div class="hero-inner">
+          <!-- Logo mark -->
+          <div class="hero-logo-mark">
+            <span class="logo-mark large">◈</span>
+            <span class="hero-logo-name" data-en="Micro-Invest" data-ar="استثمر فكتك">Micro-Invest</span>
+          </div>
+
+          <!-- Main headline -->
+          <h1 class="hero-headline">
+            <span class="hero-line-1" data-en="Turn your spare change" data-ar="حوّل فكتك الصغيرة">Turn your spare change</span>
+            <span class="hero-line-2" data-en="into a real" data-ar="إلى ثروة">into a real</span>
+            <em class="hero-accent" data-en="fortune." data-ar="حقيقية.">fortune.</em>
+          </h1>
+
+          <p class="hero-sub"
+             data-en="Every purchase rounds up to the nearest 10 EGP — the difference is automatically invested in Gold or T-Bills."
+             data-ar="كل عملية شراء تُقرَّب لأقرب 10 جنيهات — والفرق يُستثمر تلقائياً في الذهب أو أذون الخزانة.">
+            Every purchase rounds up to the nearest 10 EGP — the difference is automatically invested in Gold or T-Bills.
+          </p>
+
+          <!-- Platform stats row -->
+          <div class="hero-stats">
+            <div class="hstat">
+              <div class="hstat-val">+14.5%</div>
+              <div class="hstat-lbl" data-en="Annual ROI" data-ar="عائد سنوي">Annual ROI</div>
+            </div>
+            <div class="hstat-sep"></div>
+            <div class="hstat">
+              <div class="hstat-val">2,400+</div>
+              <div class="hstat-lbl" data-en="Investors" data-ar="مستثمر نشط">Investors</div>
+            </div>
+            <div class="hstat-sep"></div>
+            <div class="hstat">
+              <div class="hstat-val">100%</div>
+              <div class="hstat-lbl" data-en="Automated" data-ar="أتمتة كاملة">Automated</div>
+            </div>
+          </div>
+
+          <!-- Animated rising chart -->
+          <div class="hero-chart-wrap">
+            <svg class="hero-chart-svg" viewBox="0 0 300 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="hcGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#F5C842" stop-opacity="0.35"/>
+                  <stop offset="100%" stop-color="#F5C842" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path class="hc-area" d="M0,95 C30,88 60,78 100,60 C140,42 180,24 230,12 L300,5 L300,100 L0,100 Z" fill="url(#hcGrad)"/>
+              <path class="hc-line" d="M0,95 C30,88 60,78 100,60 C140,42 180,24 230,12 L300,5" fill="none" stroke="#F5C842" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle class="hc-dot" cx="300" cy="5" r="5" fill="#F5C842"/>
+            </svg>
+
+            <!-- Floating coin emojis -->
+            <div class="hero-coins">
+              <span class="hcoin hcoin-1">🪙</span>
+              <span class="hcoin hcoin-2">💰</span>
+              <span class="hcoin hcoin-3">🥇</span>
+              <span class="hcoin hcoin-4">📈</span>
+            </div>
+          </div>
+
+        </div><!-- /.hero-inner -->
+      </div><!-- /.auth-hero -->
+
+      <!-- ── FORM SIDE (right in LTR, left in RTL) ──────────── -->
+      <div class="auth-form-side">
+
+        <!-- Top bar: mini logo + toggles -->
+        <div class="auth-form-header">
+          <div class="auth-logo-sm">
+            <span class="logo-mark">◈</span>
+            <span data-en="Micro-Invest" data-ar="استثمر فكتك">Micro-Invest</span>
+          </div>
+          <div class="auth-header-controls">
+            <button class="lang-btn" id="langToggleAuth" onclick="handleLangToggle()">
+              <span>🌐</span>
+              <span id="langLabelAuth">عربي</span>
+            </button>
+            <button class="theme-btn" id="themeToggleAuth" onclick="handleThemeToggle()">
+              <span id="themeIconAuth">🌙</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Welcome text -->
+        <div class="auth-form-content">
+          <div class="auth-welcome-text">
+            <h2 data-en="Welcome back 👋" data-ar="أهلاً بك مجدداً 👋">Welcome back 👋</h2>
+            <p data-en="Sign in to continue your investment journey."
+               data-ar="سجّل دخولك لمتابعة رحلتك الاستثمارية.">
+              Sign in to continue your investment journey.
+            </p>
+          </div>
+
+          <!-- Auth Card -->
+          <div class="auth-card">
+            <div class="auth-tabs">
+              <button class="auth-tab active" id="tabLogin"
+                      data-en="Login" data-ar="تسجيل الدخول"
+                      onclick="switchAuthTab('login')">Login</button>
+              <button class="auth-tab" id="tabRegister"
+                      data-en="Register" data-ar="إنشاء حساب"
+                      onclick="switchAuthTab('register')">Register</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="auth-form" onsubmit="handleLogin(event)">
+              <div class="form-group">
+                <label data-en="Email Address" data-ar="البريد الإلكتروني">Email Address</label>
+                <input type="email" id="loginEmail" class="form-input"
+                       placeholder="you@example.com" required autocomplete="email" />
+              </div>
+              <div class="form-group">
+                <label data-en="Password" data-ar="كلمة المرور">Password</label>
+                <input type="password" id="loginPassword" class="form-input"
+                       placeholder="••••••••" required autocomplete="current-password" />
+              </div>
+              <p class="auth-error" id="loginError" style="display:none;"></p>
+              <button type="submit" class="btn-primary full" id="loginSubmit"
+                      data-en="Sign In" data-ar="دخول">Sign In</button>
+              <p class="auth-hint"
+                 data-en="Admin demo: admin@microinvest.eg / admin123"
+                 data-ar="مسؤول تجريبي: admin@microinvest.eg / admin123">
+                Admin demo: admin@microinvest.eg / admin123
+              </p>
+            </form>
+
+            <!-- Register Form -->
+            <form id="registerForm" class="auth-form" style="display:none;" onsubmit="handleRegister(event)">
+              <div class="form-group">
+                <label data-en="Full Name" data-ar="الاسم الكامل">Full Name</label>
+                <input type="text" id="regName" class="form-input"
+                       placeholder="Ahmed Mohamed" required autocomplete="name" />
+              </div>
+              <div class="form-group">
+                <label data-en="Email Address" data-ar="البريد الإلكتروني">Email Address</label>
+                <input type="email" id="regEmail" class="form-input"
+                       placeholder="you@example.com" required autocomplete="email" />
+              </div>
+              <div class="form-group">
+                <label data-en="Password (min. 6 characters)" data-ar="كلمة المرور (6 أحرف على الأقل)">Password (min. 6 characters)</label>
+                <input type="password" id="regPassword" class="form-input"
+                       placeholder="••••••••" required minlength="6" autocomplete="new-password" />
+              </div>
+              <div class="form-group">
+                <label data-en="Initial Deposit (EGP)" data-ar="الإيداع الأولي (جنيه)">Initial Deposit (EGP)</label>
+                <input type="number" id="regDeposit" class="form-input"
+                       placeholder="1000" min="0" step="50" value="1000" />
+              </div>
+              <p class="auth-error" id="registerError" style="display:none;"></p>
+              <button type="submit" class="btn-primary full" id="registerSubmit"
+                      data-en="Create Account" data-ar="إنشاء الحساب">Create Account</button>
+            </form>
+
+          </div><!-- /.auth-card -->
+        </div><!-- /.auth-form-content -->
+
+      </div><!-- /.auth-form-side -->
+
+    </div><!-- /.auth-split -->
+  </div><!-- /#view-auth -->
+
+
+  <!-- ============================================================
+       VIEW: USER DASHBOARD
+  ============================================================ -->
+  <div id="view-dashboard" class="view" style="display:none;">
+
+    <!-- ── Section: Overview ─────────────────────────────────── -->
+    <section class="dash-section" id="section-overview">
+      <div class="section-inner">
+
+        <!-- Welcome Header -->
+        <div class="dash-welcome">
+          <div>
+            <p class="welcome-label" data-en="Good day," data-ar="يوم سعيد،">Good day,</p>
+            <h1 class="welcome-name" id="welcomeName">Ahmed</h1>
+          </div>
+          <button class="btn-ghost sm" id="depositBtn"
+                  data-en="+ Top Up Balance" data-ar="+ شحن الرصيد">+ Top Up Balance</button>
+        </div>
+
+        <!-- Balance Cards Grid -->
+        <div class="cards-grid">
+
+          <div class="bal-card main-bal-card">
+            <div class="bal-card-icon">🏦</div>
+            <div class="bal-card-label" data-en="Main Balance" data-ar="الرصيد الرئيسي">Main Balance</div>
+            <div class="bal-card-value" id="mainBalDisplay">0.00 <span>EGP</span></div>
+            <div class="bal-card-sub" data-en="Available to spend" data-ar="متاح للإنفاق">Available to spend</div>
+          </div>
+
+          <div class="bal-card gold-card">
+            <div class="bal-card-icon">🥇</div>
+            <div class="bal-card-label" data-en="Digital Gold" data-ar="ذهب رقمي">Digital Gold</div>
+            <div class="bal-card-value" id="goldBalDisplay">0.00 <span>EGP</span></div>
+            <div class="bal-card-sub" data-en="Invested via round-ups" data-ar="مستثمر عبر التقريب">Invested via round-ups</div>
+            <div class="bal-card-bar"><div class="bar-fill gold-fill" id="goldBarFill" style="width:0%"></div></div>
+          </div>
+
+          <div class="bal-card tbill-card">
+            <div class="bal-card-icon">📜</div>
+            <div class="bal-card-label" data-en="T-Bills" data-ar="أذون الخزانة">T-Bills</div>
+            <div class="bal-card-value" id="tbillBalDisplay">0.00 <span>EGP</span></div>
+            <div class="bal-card-sub" data-en="Invested via round-ups" data-ar="مستثمر عبر التقريب">Invested via round-ups</div>
+            <div class="bal-card-bar"><div class="bar-fill tbill-fill" id="tbillBarFill" style="width:0%"></div></div>
+          </div>
+
+          <div class="bal-card total-card">
+            <div class="bal-card-icon">💎</div>
+            <div class="bal-card-label" data-en="Total Invested" data-ar="إجمالي المستثمر">Total Invested</div>
+            <div class="bal-card-value accent" id="totalInvDisplay">0.00 <span>EGP</span></div>
+            <div class="bal-card-sub" id="roundupCountLabel">from 0 round-ups</div>
+          </div>
+
+        </div><!-- /.cards-grid -->
+
+        <!-- ── PROFIT / ROI BANNER (new) ──────────────────────── -->
+        <div class="profit-banner" id="profitBanner" style="display:none;">
+          <div class="pb-glow"></div>
+          <div class="pb-left">
+            <div class="pb-icon-wrap">
+              <span class="pb-icon">📈</span>
+            </div>
+            <div class="pb-info">
+              <div class="pb-label"
+                   data-en="Simulated Profit  ·  14.5% Annual Growth Rate"
+                   data-ar="الربح المُحاكى  ·  معدل نمو سنوي 14.5%">
+                Simulated Profit &nbsp;·&nbsp; 14.5% Annual Growth Rate
+              </div>
+              <div class="pb-value">
+                <span class="pb-arrow">↑</span>
+                <span id="profitValue">+0.00</span>
+                <span class="pb-currency">EGP</span>
+              </div>
+              <div class="pb-sub"
+                   data-en="Based on your total invested balance"
+                   data-ar="مبني على رصيدك المستثمر الإجمالي">
+                Based on your total invested balance
+              </div>
+            </div>
+          </div>
+          <div class="pb-right">
+            <div class="pb-roi-circle">
+              <span class="pb-roi-pct" id="profitPct">+14.50%</span>
+              <span class="pb-roi-label" data-en="ROI" data-ar="العائد">ROI</span>
+            </div>
+          </div>
+        </div><!-- /.profit-banner -->
+
+        <!-- Analytics Chart -->
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <h3 data-en="Investment Growth" data-ar="نمو الاستثمار">Investment Growth</h3>
+            <span class="chart-subtitle" data-en="Cumulative round-ups over time" data-ar="التراكم التدريجي للتقريبات">Cumulative round-ups over time</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="growthChart"></canvas>
+            <div class="chart-empty" id="chartEmpty">
+              <span>📈</span>
+              <p data-en="Simulate transactions to see your growth chart."
+                 data-ar="محاكاة معاملات لرؤية الرسم البياني.">Simulate transactions to see your growth chart.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section><!-- /#section-overview -->
+
+
+    <!-- ── Section: Simulate Transaction ─────────────────────── -->
+    <section class="dash-section" id="section-simulate" style="display:none;">
+      <div class="section-inner narrow">
+
+        <div class="section-head">
+          <div class="section-tag" data-en="CORE FEATURE" data-ar="الميزة الأساسية">CORE FEATURE</div>
+          <h2 data-en="Simulate a Purchase" data-ar="محاكاة عملية شراء">Simulate a Purchase</h2>
+          <p class="section-sub"
+             data-en="Enter any price — we round it up to the nearest 10 EGP and invest the difference automatically."
+             data-ar="أدخل أي سعر — نُقرِّبه لأقرب 10 جنيهات ونستثمر الفرق تلقائياً.">
+            Enter any price — we round it up to the nearest 10 EGP and invest the difference automatically.
+          </p>
+        </div>
+
+        <div class="action-panel highlight-panel">
+
+          <div class="form-group">
+            <label data-en="Item / Merchant Name" data-ar="اسم الصنف أو المحل">Item / Merchant Name</label>
+            <input type="text" id="txItemName" class="form-input"
+                   placeholder="Morning Coffee" maxlength="40" />
+          </div>
+
+          <div class="form-group">
+            <label data-en="Actual Price (EGP)" data-ar="السعر الفعلي (جنيه)">Actual Price (EGP)</label>
+            <input type="number" id="txPrice" class="form-input"
+                   placeholder="45" min="1" step="1" oninput="handlePricePreview()" />
+          </div>
+
+          <div class="form-group">
+            <label data-en="Invest Round-Up Into" data-ar="استثمر التقريب في">Invest Round-Up Into</label>
+            <div class="toggle-group" id="assetToggle">
+              <button type="button" class="toggle-btn active" data-asset="gold"
+                      data-en="🥇 Gold" data-ar="🥇 ذهب">🥇 Gold</button>
+              <button type="button" class="toggle-btn" data-asset="tbill"
+                      data-en="📜 T-Bills" data-ar="📜 أذون خزانة">📜 T-Bills</button>
+            </div>
+          </div>
+
+          <div class="roundup-preview" id="roundupPreview">
+            <div class="rp-row">
+              <span data-en="Original Price:" data-ar=":السعر الأصلي">Original Price:</span>
+              <strong id="rpOriginal">—</strong>
+            </div>
+            <div class="rp-row">
+              <span data-en="Rounded to:" data-ar=":مُقرَّب إلى">Rounded to:</span>
+              <strong id="rpRounded">—</strong>
+            </div>
+            <div class="rp-divider"></div>
+            <div class="rp-row accent-row">
+              <span data-en="Round-Up Invested:" data-ar=":التقريب المستثمر">Round-Up Invested:</span>
+              <strong id="rpInvested">—</strong>
+            </div>
+          </div>
+
+          <button class="btn-primary full gold-pulse" id="payBtn"
+                  onclick="handlePay()"
+                  data-en="💰 Pay &amp; Invest Round-Up" data-ar="💰 ادفع واستثمر التقريب">
+            💰 Pay &amp; Invest Round-Up
+          </button>
+
+          <div class="quick-pills">
+            <span class="pill-label" data-en="Quick fill:" data-ar=":اختيار سريع">Quick fill:</span>
+            <button class="pill" onclick="quickFill('Coffee', 45)">Coffee — 45</button>
+            <button class="pill" onclick="quickFill('Uber', 73)">Uber — 73</button>
+            <button class="pill" onclick="quickFill('Lunch', 129)">Lunch — 129</button>
+            <button class="pill" onclick="quickFill('Groceries', 387)">Groceries — 387</button>
+          </div>
+        </div>
+
+        <!-- Withdraw Panel -->
+        <div class="action-panel" style="margin-top:24px;">
+          <div class="ap-header">
+            <span class="ap-icon">🏧</span>
+            <div>
+              <h4 data-en="Withdraw Savings" data-ar="سحب المدخرات">Withdraw Savings</h4>
+              <p data-en="Transfer back to your main balance" data-ar="حوّل إلى رصيدك الرئيسي">Transfer back to your main balance</p>
+            </div>
+          </div>
+          <div class="form-group">
+            <label data-en="Withdraw From" data-ar="سحب من">Withdraw From</label>
+            <select id="withdrawSource" class="form-input">
+              <option value="gold"  data-en="🥇 Digital Gold" data-ar="🥇 ذهب رقمي">🥇 Digital Gold</option>
+              <option value="tbill" data-en="📜 T-Bills"      data-ar="📜 أذون خزانة">📜 T-Bills</option>
+              <option value="all"   data-en="💎 All Investments" data-ar="💎 كل الاستثمارات">💎 All Investments</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label data-en="Amount (EGP)" data-ar="المبلغ (جنيه)">Amount (EGP)</label>
+            <input type="number" id="withdrawAmount" class="form-input" placeholder="50" min="1" />
+          </div>
+          <button class="btn-secondary full" onclick="handleWithdraw()"
+                  data-en="Withdraw to Main Balance" data-ar="سحب إلى الرصيد الرئيسي">Withdraw to Main Balance</button>
+        </div>
+
+      </div>
+    </section><!-- /#section-simulate -->
+
+
+    <!-- ── Section: Transaction History ──────────────────────── -->
+    <section class="dash-section" id="section-history" style="display:none;">
+      <div class="section-inner">
+
+        <div class="section-head">
+          <div>
+            <div class="section-tag" data-en="ACTIVITY LOG" data-ar="سجل النشاط">ACTIVITY LOG</div>
+            <h2 data-en="Transaction History" data-ar="سجل المعاملات">Transaction History</h2>
+          </div>
+          <button class="btn-ghost sm" onclick="loadDashboardData()"
+                  data-en="↻ Refresh" data-ar="↻ تحديث">↻ Refresh</button>
+        </div>
+
+        <div class="tx-card">
+          <div class="table-scroll">
+            <table class="tx-table">
+              <thead>
+                <tr>
+                  <th data-en="Item"        data-ar="الصنف">Item</th>
+                  <th data-en="Price"       data-ar="السعر">Price</th>
+                  <th data-en="Charged"     data-ar="المُحصَّل">Charged</th>
+                  <th data-en="Round-Up"    data-ar="التقريب">Round-Up</th>
+                  <th data-en="Invested In" data-ar="مستثمر في">Invested In</th>
+                  <th data-en="Date"        data-ar="التاريخ">Date</th>
+                </tr>
+              </thead>
+              <tbody id="txTableBody"></tbody>
+            </table>
+          </div>
+          <div class="tx-empty" id="txEmpty">
+            <span>📭</span>
+            <p data-en="No transactions yet. Simulate one!" data-ar="لا معاملات حتى الآن.">No transactions yet. Simulate one!</p>
+          </div>
+        </div>
+
+      </div>
+    </section><!-- /#section-history -->
+
+  </div><!-- /#view-dashboard -->
+
+
+  <!-- ============================================================
+       VIEW: ADMIN PANEL
+  ============================================================ -->
+  <div id="view-admin" class="view" style="display:none;">
+
+    <!-- ── Section: Admin Overview ───────────────────────────── -->
+    <section class="dash-section" id="section-admin-overview">
+      <div class="section-inner">
+
+        <div class="section-head">
+          <div>
+            <div class="section-tag" data-en="ADMIN PANEL" data-ar="لوحة المسؤول">ADMIN PANEL</div>
+            <h2 data-en="Platform Overview" data-ar="نظرة عامة على المنصة">Platform Overview</h2>
+          </div>
+          <button class="btn-ghost sm" onclick="loadAdminData()"
+                  data-en="↻ Refresh" data-ar="↻ تحديث">↻ Refresh</button>
+        </div>
+
+        <div class="admin-stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-value" id="adminTotalUsers">—</div>
+            <div class="stat-label" data-en="Registered Users" data-ar="المستخدمون المسجلون">Registered Users</div>
+          </div>
+          <div class="stat-card accent-gold">
+            <div class="stat-icon">💰</div>
+            <div class="stat-value" id="adminTotalAUM">—</div>
+            <div class="stat-label" data-en="Total AUM (EGP)" data-ar="إجمالي الأصول المُدارة">Total AUM (EGP)</div>
+          </div>
+          <div class="stat-card accent-green">
+            <div class="stat-icon">📊</div>
+            <div class="stat-value" id="adminTotalTx">—</div>
+            <div class="stat-label" data-en="Total Transactions" data-ar="إجمالي المعاملات">Total Transactions</div>
+          </div>
+          <div class="stat-card accent-blue">
+            <div class="stat-icon">📈</div>
+            <div class="stat-value" id="adminTotalInvested">—</div>
+            <div class="stat-label" data-en="Total Round-Ups Invested" data-ar="إجمالي التقريبات المستثمرة">Total Round-Ups Invested</div>
+          </div>
+        </div>
+
+        <div class="tx-card">
+          <div class="tx-card-header">
+            <h3 data-en="Recent Platform Activity" data-ar="آخر نشاطات المنصة">Recent Platform Activity</h3>
+          </div>
+          <div class="table-scroll">
+            <table class="tx-table">
+              <thead>
+                <tr>
+                  <th data-en="User"        data-ar="المستخدم">User</th>
+                  <th data-en="Item"        data-ar="الصنف">Item</th>
+                  <th data-en="Price"       data-ar="السعر">Price</th>
+                  <th data-en="Round-Up"    data-ar="التقريب">Round-Up</th>
+                  <th data-en="Asset"       data-ar="الأصل">Asset</th>
+                  <th data-en="Date"        data-ar="التاريخ">Date</th>
+                </tr>
+              </thead>
+              <tbody id="adminActivityBody"></tbody>
+            </table>
+          </div>
+          <div class="tx-empty" id="adminActivityEmpty">
+            <span>📭</span>
+            <p data-en="No activity yet." data-ar="لا نشاط حتى الآن.">No activity yet.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── Section: All Users ─────────────────────────────────── -->
+    <section class="dash-section" id="section-admin-users" style="display:none;">
+      <div class="section-inner">
+
+        <div class="section-head">
+          <div>
+            <div class="section-tag" data-en="USER MANAGEMENT" data-ar="إدارة المستخدمين">USER MANAGEMENT</div>
+            <h2 data-en="All Registered Users" data-ar="كل المستخدمين المسجلين">All Registered Users</h2>
+          </div>
+        </div>
+
+        <div class="tx-card">
+          <div class="table-scroll">
+            <table class="tx-table">
+              <thead>
+                <tr>
+                  <th data-en="ID"           data-ar="م">ID</th>
+                  <th data-en="Name"         data-ar="الاسم">Name</th>
+                  <th data-en="Email"        data-ar="البريد">Email</th>
+                  <th data-en="Role"         data-ar="الدور">Role</th>
+                  <th data-en="Main Balance" data-ar="الرصيد">Main Balance</th>
+                  <th data-en="Invested"     data-ar="المستثمر">Invested</th>
+                  <th data-en="Joined"       data-ar="تاريخ الانضمام">Joined</th>
+                </tr>
+              </thead>
+              <tbody id="adminUsersBody"></tbody>
+            </table>
+          </div>
+          <div class="tx-empty" id="adminUsersEmpty">
+            <span>👥</span>
+            <p data-en="No users registered yet." data-ar="لا مستخدمين مسجلين.">No users registered yet.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </div><!-- /#view-admin -->
+
+
+  <!-- ============================================================
+       MODAL: TOP-UP BALANCE
+  ============================================================ -->
+  <div class="modal-overlay" id="depositModal" style="display:none;" onclick="closeDepositModal(event)">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 data-en="Top Up Balance" data-ar="شحن الرصيد">Top Up Balance</h3>
+        <button class="modal-close" onclick="closeDepositModal()">&times;</button>
+      </div>
+      <div class="form-group">
+        <label data-en="Amount to Add (EGP)" data-ar="المبلغ المُضاف (جنيه)">Amount to Add (EGP)</label>
+        <input type="number" id="depositAmount" class="form-input"
+               placeholder="500" min="10" step="50" value="500" />
+      </div>
+      <button class="btn-primary full" onclick="handleDeposit()"
+              data-en="Add to Balance" data-ar="إضافة للرصيد">Add to Balance</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
