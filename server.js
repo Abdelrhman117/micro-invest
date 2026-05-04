@@ -15,8 +15,11 @@ const fs         = require('fs');
 const app  = express();
 const PORT = 3000;
 
-// ── مسار قاعدة البيانات (ملف JSON العادي) ───────────────────────
-const DB_PATH = path.join(__dirname, 'database.json');
+// ── مسار قاعدة البيانات ──────────────────────────────────────────
+// على Vercel الـ filesystem محمي — نكتب على /tmp
+const DB_PATH = process.env.VERCEL
+  ? '/tmp/database.json'
+  : path.join(__dirname, 'database.json');
 
 // دوال قراءة وكتابة البيانات في الملف
 function readDB() {
@@ -350,15 +353,21 @@ app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
    ================================================================ */
 initDatabase();
 
-app.listen(PORT, () => {
-  console.log('');
-  console.log('╔═══════════════════════════════════════════════════╗');
-  console.log('║       Micro-Invest Server  v3.0  Running          ║');
-  console.log('║       (JSON File Storage - Clean Version)         ║');
-  console.log(`║       http://localhost:${PORT}                       ║`);
-  console.log('╚═══════════════════════════════════════════════════╝');
-  console.log('');
-  console.log('  Default admin  →  admin@microinvest.eg  /  admin123');
-  console.log('  Database file  →  database.json');
-  console.log('');
-});
+// Vercel serverless: export app بدل app.listen
+// محلياً: شغّل السيرفر عادي
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log('');
+    console.log('╔═══════════════════════════════════════════════════╗');
+    console.log('║       Micro-Invest Server  v3.0  Running          ║');
+    console.log('║       (JSON File Storage - Clean Version)         ║');
+    console.log(`║       http://localhost:${PORT}                       ║`);
+    console.log('╚═══════════════════════════════════════════════════╝');
+    console.log('');
+    console.log('  Default admin  →  admin@microinvest.eg  /  admin123');
+    console.log('  Database file  →  database.json');
+    console.log('');
+  });
+}
+
+module.exports = app;
