@@ -1,13 +1,9 @@
 /* ================================================================
    server.js — Micro-Invest Backend (Node.js + Express + JSON FS)
    ----------------------------------------------------------------
-   Author  : BIS Graduation Project — Faculty of Commerce, 2025
-   Purpose : RESTful API server that handles authentication,
-             transaction simulation (round-up logic), and admin
-             reporting for the Micro-Invest fintech prototype.
-             
-   * MODIFIED VERSION: Uses a local 'database.json' file instead of 
-     SQLite to avoid Windows node-gyp compilation errors.
+   Author  : BIS Graduation Project
+   Purpose : RESTful API server using local database.json (No SQLite)
+             Features: Auth, Round-Up Simulation, Admin Panel.
    ================================================================ */
 
 const express    = require('express');
@@ -19,10 +15,10 @@ const fs         = require('fs');
 const app  = express();
 const PORT = 3000;
 
-// ── Database file lives at project root ─────────────────────────
+// ── مسار قاعدة البيانات (ملف JSON العادي) ───────────────────────
 const DB_PATH = path.join(__dirname, 'database.json');
 
-// Helper functions for reading and writing to the JSON file
+// دوال قراءة وكتابة البيانات في الملف
 function readDB() {
   return JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
 }
@@ -32,21 +28,21 @@ function writeDB(data) {
 }
 
 /* ================================================================
-   1. DATABASE INITIALISATION
+   1. تهيئة قاعدة البيانات (DATABASE INITIALISATION)
    ================================================================ */
 function initDatabase() {
-  // Create database.json if it doesn't exist
+  // لو الملف مش موجود، نكريته ببيانات فاضية
   if (!fs.existsSync(DB_PATH)) {
     writeDB({ users: [], transactions: [] });
   }
 
   const db = readDB();
-
-  // ── Seed a default admin account on first run ──────────────────
+  
+  // التأكد من وجود حساب الأدمن الافتراضي
   const adminExists = db.users.find(u => u.role === 'admin');
   if (!adminExists) {
     db.users.push({
-      id: 1, // Admin is user 1
+      id: 1,
       name: 'Admin',
       email: 'admin@microinvest.eg',
       password_hash: hashPassword('admin123'),
@@ -64,14 +60,15 @@ function initDatabase() {
 }
 
 /* ================================================================
-   2. MIDDLEWARE
+   2. إعدادات السيرفر (MIDDLEWARE)
    ================================================================ */
 app.use(cors());
 app.use(express.json());
+// تقديم ملفات الواجهة الأمامية من فولدر public
 app.use(express.static(path.join(__dirname, 'public')));
 
 /* ================================================================
-   3. AUTH HELPERS — password hashing & session tokens
+   3. دوال الحماية والتشفير (AUTH HELPERS)
    ================================================================ */
 function hashPassword(password) {
   return crypto.createHash('sha256').update(password + 'micro_invest_salt_2025').digest('hex');
@@ -109,7 +106,7 @@ function requireAdmin(req, res, next) {
 }
 
 /* ================================================================
-   4. AUTH ROUTES
+   4. مسارات تسجيل الدخول (AUTH ROUTES)
    ================================================================ */
 app.post('/api/auth/register', (req, res) => {
   const { name, email, password, initialDeposit } = req.body;
@@ -176,7 +173,7 @@ app.post('/api/auth/logout', requireAuth, (req, res) => {
 });
 
 /* ================================================================
-   5. USER ROUTES
+   5. مسارات المستخدم (USER ROUTES)
    ================================================================ */
 app.get('/api/user/data', requireAuth, (req, res) => {
   const db = readDB();
@@ -188,13 +185,28 @@ app.get('/api/user/data', requireAuth, (req, res) => {
   
   const transactions = db.transactions
     .filter(t => t.user_id === req.user.userId)
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // newest first
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   return res.status(200).json({ user: safeUser, transactions });
 });
 
+app.post('/api/user/deposit', requireAuth, (req, res) => {
+  const amount = parseFloat(req.body.amount);
+  if (isNaN(amount) || amount < 10) return res.status(400).json({ error: 'Minimum deposit is 10 EGP.' });
+
+  const db = readDB();
+  const userIndex = db.users.findIndex(u => u.id === req.user.userId);
+  db.users[userIndex].total_balance += amount;
+  writeDB(db);
+
+  return res.status(200).json({
+    message        : `${amount} EGP deposited to your main balance.`,
+    updatedBalances: { total_balance: db.users[userIndex].total_balance, gold_balance: db.users[userIndex].gold_balance, tbill_balance: db.users[userIndex].tbill_balance }
+  });
+});
+
 /* ================================================================
-   6. TRANSACTION ROUTES — THE CORE BIS FEATURE
+   6. مسارات العمليات (TRANSACTION ROUTES - BIS CORE LOGIC)
    ================================================================ */
 app.post('/api/transaction/simulate', requireAuth, (req, res) => {
   const { itemName, originalPrice, asset } = req.body;
@@ -208,7 +220,7 @@ app.post('/api/transaction/simulate', requireAuth, (req, res) => {
   if (isNaN(price) || price <= 0) return res.status(400).json({ error: 'Please provide a valid price greater than 0.' });
   if (!['gold', 'tbill'].includes(asset)) return res.status(400).json({ error: "Asset must be 'gold' or 'tbill'." });
 
-  // Core Round-Up Logic (Nearest 10)
+  // ── معادلة التقريب لأقرب 10 جنيهات (مثال: 45 تقرب إلى 50) ──
   const roundedAmount  = Math.ceil(price / 10) * 10;
   const investedAmount = parseFloat((roundedAmount - price).toFixed(2));
 
@@ -221,12 +233,12 @@ app.post('/api/transaction/simulate', requireAuth, (req, res) => {
     return res.status(400).json({ error: `Insufficient balance. You need ${roundedAmount} EGP but have ${user.total_balance.toFixed(2)} EGP.` });
   }
 
-  // Update Balances
+  // تحديث الأرصدة
   user.total_balance -= roundedAmount;
   if (asset === 'gold') user.gold_balance += investedAmount;
   else user.tbill_balance += investedAmount;
 
-  // Log Transaction
+  // تسجيل العملية
   const newTxId = db.transactions.length > 0 ? Math.max(...db.transactions.map(t => t.id)) + 1 : 1;
   const newTx = {
     id: newTxId,
@@ -242,7 +254,7 @@ app.post('/api/transaction/simulate', requireAuth, (req, res) => {
 
   db.transactions.push(newTx);
   db.users[userIndex] = user;
-  writeDB(db); // Save to file
+  writeDB(db); 
 
   return res.status(201).json({
     message        : `Round-up of ${investedAmount} EGP invested in ${asset === 'gold' ? 'Digital Gold' : 'T-Bills'}! 🎉`,
@@ -299,23 +311,8 @@ app.post('/api/transaction/withdraw', requireAuth, (req, res) => {
   });
 });
 
-app.post('/api/user/deposit', requireAuth, (req, res) => {
-  const amount = parseFloat(req.body.amount);
-  if (isNaN(amount) || amount < 10) return res.status(400).json({ error: 'Minimum deposit is 10 EGP.' });
-
-  const db = readDB();
-  const userIndex = db.users.findIndex(u => u.id === req.user.userId);
-  db.users[userIndex].total_balance += amount;
-  writeDB(db);
-
-  return res.status(200).json({
-    message        : `${amount} EGP deposited to your main balance.`,
-    updatedBalances: { total_balance: db.users[userIndex].total_balance, gold_balance: db.users[userIndex].gold_balance, tbill_balance: db.users[userIndex].tbill_balance }
-  });
-});
-
 /* ================================================================
-   7. ADMIN ROUTES
+   7. مسارات الأدمن (ADMIN ROUTES)
    ================================================================ */
 app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
   const db = readDB();
@@ -349,7 +346,7 @@ app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
 });
 
 /* ================================================================
-   8. SERVER START
+   8. تشغيل السيرفر (SERVER START)
    ================================================================ */
 initDatabase();
 
@@ -357,7 +354,7 @@ app.listen(PORT, () => {
   console.log('');
   console.log('╔═══════════════════════════════════════════════════╗');
   console.log('║       Micro-Invest Server  v3.0  Running          ║');
-  console.log('║       (JSON File Storage - No SQLite required)    ║');
+  console.log('║       (JSON File Storage - Clean Version)         ║');
   console.log(`║       http://localhost:${PORT}                       ║`);
   console.log('╚═══════════════════════════════════════════════════╝');
   console.log('');
